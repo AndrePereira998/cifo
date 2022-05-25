@@ -1,3 +1,4 @@
+from scipy import rand
 from charles import Individual
 from random import randint, uniform, sample
 
@@ -5,14 +6,17 @@ from random import randint, uniform, sample
 
 def single_point_crossover(parent1,parent2):   # imput são duas listas só de soluçoes  
     """ function implementing single point crossover, creating two offspring from the two parent inputs"""
+    #print('crossover')
 
     co_point = randint(1, len(parent1)-2) 
-
+    
     # spliting lists at the crossover point and merging the resulting lists
     children1 = parent1[:co_point] + parent2[co_point:]
     children2 = parent2[:co_point] + parent1[co_point:]
+    
 
-    return Individual( representation = children1, indiv_array = parent1.indiv_array ), Individual( representation = children1, indiv_array = parent1.indiv_array )
+
+    return children1, children2
 
 
 
@@ -27,7 +31,7 @@ def multi_point_crossover(parent1,parent2):    # imput são duas listas só de s
     children1 = parent1[:co_points[0]] + parent2[co_points[0]:co_points[1]] + parent1[co_points[1]:]
     children2 = parent2[:co_points[0]] + parent1[co_points[0]:co_points[1]] + parent2[co_points[1]:]
 
-    return Individual( representation = children1, indiv_array = parent1.indiv_array ), Individual( representation = children1, indiv_array = parent1.indiv_array )
+    return children1, children2
 
 
 
@@ -36,19 +40,23 @@ def uniform_crossover(parent1,parent2):
         https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_crossover.htm 
         https://medium.com/@samiran.bera/crossover-operator-the-heart-of-genetic-algorithm-6c0fdcb405c0"""
 
+    print('aqui')
     # creating a list of probabilities of the swap occuring
-    prob_list = sample(range(0, 1), len(parent1))
+    prob_list = [uniform(0,1) for _ in range(len(parent1))]
+    print(prob_list)
 
-    children1 = parent1.copy()
-    children2 = parent2.copy()
+    children1 = parent1
+    children2 = parent2
 
-    for i in range(prob_list):
+    print(children1,children2)
+
+    for i, value in enumerate(prob_list):
         # when the probability is less than 0.5 the swap happens
-        if prob_list[i] < 0.5:   
+        if value < 0.5:   
             temp = children1[i]
             children1[i] = children2[i]
             children2[i] = temp
     
-    return Individual( representation = children1, indiv_array = parent1.indiv_array ), Individual( representation = children1, indiv_array = parent1.indiv_array )
+    return children1, children2
 
 

@@ -15,9 +15,9 @@ from charles import Population, Individual
 #from charles.search import hill_climb, sim_annealing
 from copy import deepcopy
 #from data.ks_data import weights, values, capacity
-from selection import fps, tournament
-#from charles.mutation import binary_mutation, swap_mutation, inversion_mutation
-#from charles.crossover import single_point_co
+from selection import roulette_wheel, tournament
+from mutation import scramble_mutation, swap_mutation, inversion_mutation
+from crossover import single_point_crossover,multi_point_crossover,uniform_crossover
 from random import random
 from operator import attrgetter
 
@@ -56,13 +56,6 @@ def before_fitness(full_array, solutions):
 
 
                 
-
-
-
-
-
-
-
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     problem = load_sudoku("problem.txt")
@@ -72,18 +65,41 @@ if __name__ == '__main__':
     arr = np.array(problem)
 
     pop = Population(
-        size=10,
+        size=500,
         full_array = arr,
         replacement=False,
         optim="max",
     )
 
-    pop.evolve(gens=100,
-           select=tournament,
-           #crossover=single_point_co,
-           #mutate=inversaion_mutation,
-           co_p=0.9, mu_p=0.1,
-           elitism=False)
+    print(pop)
+
+    for selection in [tournament, roulette_wheel]:
+        pop.evolve(gens=10,
+            select=selection,
+            crossover=single_point_crossover,
+            mutate=swap_mutation,
+            co_p=0.9, mu_p=0.1,
+            elitism=False,
+            full_array_evolve=arr)
+    print('cross')
+    for crossovering in [uniform_crossover]:
+        pop.evolve(gens=10,
+            select=tournament,
+            crossover=crossovering,
+            mutate=swap_mutation,
+            co_p=0.9, mu_p=0.1,
+            elitism=False,
+            full_array_evolve=arr)
+
+    for mutating in [scramble_mutation, swap_mutation, inversion_mutation]:
+            print(mutating)
+            pop.evolve(gens=10,
+                select=tournament,
+                crossover=single_point_crossover,
+                mutate=mutating,
+                co_p=0.9, mu_p=0.1,
+                elitism=False,
+                full_array_evolve=arr)
 
 
 

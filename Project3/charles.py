@@ -24,6 +24,10 @@ class Individual:
 
     def get_fitness(self, indiv_array):
         sol_pos = 0 # auxiliar to move solution array
+        #print('fitness de novo individual')
+        #print('saltei')
+        #print(self.representation)
+        #print(indiv_array)
         indiv_array_aux = indiv_array.copy() # auxiliar to not ruin main array
 
         # substitute zero with solution values to calc fitness
@@ -71,7 +75,7 @@ class Individual:
         self.representation[position] = value
 
     def __repr__(self):
-        return f"Individual(size={len(self.representation)}); Fitness: {self.fitness}"
+        return f"Individual(size={len(self.representation)}); Fitness: {self.fitness};"
 
 
 class Population:
@@ -81,24 +85,26 @@ class Population:
         self.optim = optim
         self.full_array = full_array
         for _ in range(size):
-            print("full array")
-            print(full_array)
-            print('###################################')
+            #print("full array")
+            #print(full_array)
+            #print('###################################')
             self.individuals.append(
                 Individual(
                     size=full_array[np.where(full_array == 0)].size,
                     replacement=kwargs["replacement"],
-                    indiv_array = full_array
+                    indiv_array = full_array.copy()
                 )
             )
     
  
 
     # correctly done?
-    def evolve(self, gens, select, crossover=None, mutate=None, co_p=None, mu_p=None, elitism=False):
-        print('entrei')
+    def evolve(self, gens, select, crossover=None, mutate=None, co_p=None, mu_p=None, elitism=False, full_array_evolve=None):
+        #print('entrei')
         for gen in range(gens):
             new_pop = []
+            if gen == (gens):
+                print('#################################################')
 
             if elitism == True:
                 if self.optim == "max":
@@ -107,23 +113,27 @@ class Population:
                     elite = deepcopy(min(self.individuals, key=attrgetter("fitness")))
 
             while len(new_pop) < self.size:
-                print('selection')
+                #print('selection')
                 parent1, parent2 = select(self), select(self)
-                print(parent1, parent2)
+                #print(parent1, parent2)
+                #print('Crossover')
                 # Crossover
                 if random() < co_p:
-                    offspring1, offspring2 = crossover(parent1, parent2)
+                    offspring1, offspring2 = crossover(parent1.representation, parent2.representation)
                 else:
-                    offspring1, offspring2 = parent1, parent2
+                    offspring1, offspring2 = parent1.representation, parent2.representation
+                #print(offspring1, offspring2)
+                #print('mutation')
                 # Mutation
                 if random() < mu_p:
                     offspring1 = mutate(offspring1)
                 if random() < mu_p:
                     offspring2 = mutate(offspring2)
-
-                new_pop.append(Individual(representation=offspring1))
+                #print(offspring1, offspring2)
+                #print('final stuff')
+                new_pop.append(Individual(representation=offspring1, indiv_array=full_array_evolve))
                 if len(new_pop) < self.size:
-                    new_pop.append(Individual(representation=offspring2))
+                    new_pop.append(Individual(representation=offspring2, indiv_array=full_array_evolve))
 
             if elitism == True:
                 if self.optim == "max":

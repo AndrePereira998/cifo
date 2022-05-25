@@ -8,7 +8,7 @@ def swap_mutation(Individual):   # input é a lista so com as soluçoes
 
     # generating two random numbers that will serve as indexes of the mutation
     mu_points = sample(range(len(Individual)), 2)    #### SAI SEMPRE EM ORDEM ASCENDENTE???  
-
+    mu_points.sort()
     Individual_copy = Individual.copy()
 
     # switching two elements of the array 
@@ -25,7 +25,7 @@ def inversion_mutation(Individual):
 
     # generating two random numbers that will serve as indexes of the mutation
     mu_points = sample(range(len(Individual)), 2)  #### SAI SEMPRE EM ORDEM ASCENDENTE???  
-
+    mu_points.sort()
     sub_list = Individual[mu_points[0]:mu_points[1]]
     sub_list = sub_list[::-1]  # inverting list
 
@@ -40,12 +40,15 @@ def scramble_mutation(Individual):
     """ function performing scramble mutation by randomly shuffling a subset of the original list.
         For simplicity reasons we will always select a continous subset"""
 
-    mu_points = sample(range(len(Individual)), 2)
+    
+    mu_points = sample(range(0,len(Individual)), 2)
+    mu_points.sort()
+
 
     sub_list = Individual[mu_points[0]:mu_points[1]]
     # randomly shffling the list 
-    sub_list = shuffle(sub_list)
-
+    shuffle(sub_list)    
+    
     Individual = Individual[:mu_points[0]] + sub_list + Individual[mu_points[1]:]
 
     return Individual

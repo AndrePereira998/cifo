@@ -1,3 +1,5 @@
+from logging import raiseExceptions
+from multiprocessing.reduction import duplicate
 from random import shuffle, choice, sample, random
 from operator import attrgetter
 from copy import deepcopy
@@ -12,7 +14,8 @@ class Individual:
         representation=None,
         size=None,
         replacement=True,
-        indiv_array = None
+        indiv_array = None,
+        indiv_optim = None
     ):
         if representation is None:
             # print(self.indiv_optim)
@@ -20,38 +23,72 @@ class Individual:
             
         else:
             self.representation = representation
+
+        if indiv_optim is None: 
+            self.indiv_optim = 'max'
+        else: self.indiv_optim = indiv_optim
         
         self.get_fitness(indiv_array)
 
     def get_fitness(self, indiv_array):
-
         sol_pos = 0 # auxiliar to move solution array
         indiv_array_aux = indiv_array.copy() # auxiliar to not ruin main array
 
-        # substitute zero with solution values to calc fitness
-        for pos, value in enumerate(indiv_array):
-            if value == 0: 
-                indiv_array_aux[pos] = self[sol_pos]
-                sol_pos += 1   
-                
-        count = 0 
-        # in case of necessary change to list use this: 
-        # count += len(set(indiv_array_aux.numbers[i:i+9]))  
-        
-        
-        for i in [0,9,18,27,36,45,54,63,72]:    #for each row
-            count += len(set(indiv_array_aux[i:i+9]))  
+        if self.indiv_optim == 'max':   
+            # substitute zero with solution values to calc fitness
+            for pos, value in enumerate(indiv_array):
+                if value == 0: 
+                    indiv_array_aux[pos] = self[sol_pos]
+                    sol_pos += 1   
+                    
+            count = 0 
+            # in case of necessary change to list use this: 
+            # count += len(set(indiv_array_aux.numbers[i:i+9]))  
             
-        for i in range(0,9):    #for each column
-            count += len(set(indiv_array_aux[i::9]))   
+            
+            for i in [0,9,18,27,36,45,54,63,72]:    #for each row
+                count += len(set(indiv_array_aux[i:i+9]))  
+                
+            for i in range(0,9):    #for each column
+                count += len(set(indiv_array_aux[i::9]))   
 
-        for i in [0,3,6,27,30,33,54,57,60]:  # for each block
-            con = np.concatenate((indiv_array_aux[i:i+3],indiv_array_aux[i+9:i+12],indiv_array_aux[i+18:i+21]))
-            count += len(set(con))
+            for i in [0,3,6,27,30,33,54,57,60]:  # for each block
+                con = np.concatenate((indiv_array_aux[i:i+3],indiv_array_aux[i+9:i+12],indiv_array_aux[i+18:i+21]))
+                count += len(set(con))
 
-        self.fitness = count
+            self.fitness = count
 
-        return self.fitness
+            return self.fitness
+        
+        elif self.indiv_optim=='min':
+             # substitute zero with solution values to calc fitness
+            for pos, value in enumerate(indiv_array):
+                if value == 0: 
+                    indiv_array_aux[pos] = self[sol_pos]
+                    sol_pos += 1   
+                    
+            count = 0 
+            duplicates = 0
+            for i in [0,9,18,27,36,45,54,63,72]:    #for each row
+                count += len(set(indiv_array_aux[i:i+9])) 
+                duplicates += 9-len(set(indiv_array_aux[i:i+9]))
+
+            for i in range(0,9):    #for each column
+                count += len(set(indiv_array_aux[i::9]))
+                duplicates += 9-len(set(indiv_array_aux[i::9]))
+
+            for i in [0,3,6,27,30,33,54,57,60]:  # for each block
+                con = np.concatenate((indiv_array_aux[i:i+3],indiv_array_aux[i+9:i+12],indiv_array_aux[i+18:i+21]))
+                count += len(set(con))
+                duplicates += 9-len(set(con))
+
+            self.fitness = duplicates
+            return self.fitness
+
+
+
+        else: 
+            raise Exception("Do something else min not working.")
 
 
     def get_neighbours(self, func, **kwargs):
@@ -70,7 +107,7 @@ class Individual:
         self.representation[position] = value
 
     def __repr__(self):
-        return f"Individual(size={len(self.representation)}); Fitness: {self.fitness};"
+        return f"Individual(size={len(self.representation)}); Fitness: {self.fitness}; Optimization: {self.indiv_optim};"
 
 
 class Population:
@@ -82,21 +119,22 @@ class Population:
         self.folder = folder
         self.filename = filename
         self.gen = 1
-        for _ in range(size):
-            
+        for _ in range(size):            
             self.individuals.append(
                 Individual(
                     size=full_array[np.where(full_array == 0)].size,
                     replacement=kwargs["replacement"],
-                    indiv_array = full_array.copy()
+                    indiv_array = full_array.copy(),
+                    indiv_optim = self.optim
                 )
             )
     
  
 
 
-    def evolve(self, gens, select, crossover=None, mutate=None, co_p=None, mu_p=None, elitism=False, full_array_evolve=None,log=False):
-        
+    def evolve(self, gens, select, crossover=None, mutate=None, co_p=None, mu_p=None, elitism=False, conv_param=[], full_array_evolve=None,log=False):
+        the_best = [] 
+        flag = 0      
         for gen in range(gens):
             new_pop = []
             
@@ -107,8 +145,8 @@ class Population:
                     elite = deepcopy(min(self.individuals, key=attrgetter("fitness")))
 
             while len(new_pop) < self.size:
+                parent1, parent2 = select(self), select(self)                
                 
-                parent1, parent2 = select(self), select(self)
     
                 # Crossover
                 if random() < co_p:
@@ -122,9 +160,9 @@ class Population:
                 if random() < mu_p:
                     offspring2 = mutate(offspring2)
 
-                new_pop.append(Individual(representation=offspring1, indiv_array=full_array_evolve))
+                new_pop.append(Individual(representation=offspring1, indiv_array=full_array_evolve, indiv_optim=self.optim))
                 if len(new_pop) < self.size:
-                    new_pop.append(Individual(representation=offspring2, indiv_array=full_array_evolve))
+                    new_pop.append(Individual(representation=offspring2, indiv_array=full_array_evolve, indiv_optim=self.optim))
 
             if elitism == True:
                 if self.optim == "max":
@@ -134,13 +172,40 @@ class Population:
                 new_pop.pop(new_pop.index(least))
                 new_pop.append(elite)
 
-            self.individuals = new_pop
-
             if self.optim == "max":
-                print(f'Best Individual: {max(self, key=attrgetter("fitness"))}')
+                #print(f'Best Individual: {max(self, key=attrgetter("fitness"))}')
+                the_best.append(max(self, key=attrgetter("fitness")).fitness)
             elif self.optim == "min":
-                print(f'Best Individual: {min(self, key=attrgetter("fitness"))}')
-            
+                #print(f'Best Individual: {min(self, key=attrgetter("fitness"))}')
+                the_best.append(min(self, key=attrgetter("fitness")).fitness)
+
+
+            #conv_param = [200, 100, 50] # minimum n of gen, min n to compare, min n of repeated
+            if conv_param:                 
+                if gens > conv_param[0]: 
+                    if len(the_best) > conv_param[1]: 
+                        # if there are the 10 numbers equal to the last restart (since elitism is on we can consider that the last number is the best)
+                        if the_best.count(the_best[-1]) > conv_param[2]: 
+                            flag = 1
+                            the_best = []                
+                
+            if flag == 1: 
+                # if flag to avoid converge is activated a new random pop will be created
+                self.individuals = []
+                for _ in range(self.size):            
+                            self.individuals.append(
+                                Individual(
+                                    size=full_array_evolve[np.where(full_array_evolve == 0)].size,
+                                    indiv_array = full_array_evolve.copy(),
+                                    indiv_optim = self.optim
+                                )
+                            )
+                flag = 0 
+
+            else: self.individuals = new_pop 
+
+            #print(self.individuals)
+                                        
             if log:
                 self.log(gens)
             self.gen += 1
@@ -152,11 +217,18 @@ class Population:
         return self.individuals[position]
 
     def __repr__(self):
-        return f"Population(size={len(self.individuals)}, individual_size={len(self.individuals[0])})"
+        return f"Population(size={len(self.individuals)}, individual_size={len(self.individuals[0])}, Best Individual(size={min(self, key=attrgetter('fitness'))},)"
 
     def log(self, num_gens):
         """ Creation of csv file with best fitness of every generation """
         best_indiv = max(self, key=attrgetter("fitness"))
+
+        if self.optim =='max':
+            best_indiv = max(self, key=attrgetter("fitness"))
+        elif self.optim=='min':
+            best_indiv = min(self, key=attrgetter("fitness"))
+
+
         i=0
         my_file = Path(fr"./{self.folder}/{self.filename}.csv")
 

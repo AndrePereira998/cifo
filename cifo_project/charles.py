@@ -18,7 +18,6 @@ class Individual:
         indiv_optim = None
     ):
         if representation is None:
-            # print(self.indiv_optim)
             self.representation = [randint(1,9) for _ in range(size)]
             
         else:
@@ -29,6 +28,35 @@ class Individual:
         else: self.indiv_optim = indiv_optim
         
         self.get_fitness(indiv_array)
+
+    # fitness function calculating average number of different digits per row, column and box (only works for max)
+    #def get_fitness(self, indiv_array): 
+    #    sol_pos = 0 # auxiliar to move solution array
+    #    indiv_array_aux = indiv_array.copy() # auxiliar to not ruin main array
+    #
+    #    row_list = []
+    #    for i in [0,9,18,27,36,45,54,63,72]:    #for each row
+    #            count = len(set(indiv_array_aux[i:i+9])) 
+    #            row_list.append(count)
+
+    # column_list = []
+    # for i in range(0,9):    #for each column
+    #         count = len(set(indiv_array_aux[i::9]))
+    #         column_list.append(count)
+
+    # box_list = []
+    # for i in [0,3,6,27,30,33,54,57,60]:  # for each block
+    #         con = np.concatenate((indiv_array_aux[i:i+3],indiv_array_aux[i+9:i+12],indiv_array_aux[i+18:i+21]))
+    #         count = len(set(con))
+    #         box_list.append(count)
+
+    # avg_row = sum(row_list)/9
+    # avg_column = sum(column_list)/9
+    # avg_box = sum(box_list)/9
+
+    # self.fitness = (avg_row + avg_box + avg_column)/3
+    # return self.fitness
+    
 
     def get_fitness(self, indiv_array):
         sol_pos = 0 # auxiliar to move solution array
@@ -90,9 +118,6 @@ class Individual:
         else: 
             raise Exception("Do something else min not working.")
 
-
-    def get_neighbours(self, func, **kwargs):
-        raise Exception("You need to monkey patch the neighbourhood function.")
 
     def index(self, value):
         return self.representation.index(value)
@@ -203,8 +228,6 @@ class Population:
                 flag = 0 
 
             else: self.individuals = new_pop 
-
-            #print(self.individuals)
                                         
             if log:
                 self.log(gens)
@@ -243,8 +266,7 @@ class Population:
             with open(fr"./{self.folder}/{self.filename}.csv", 'a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow([self.gen, best_indiv.fitness])
-        # if first generation is complete, then add new fitness value to the end of the line
-        
+        # if first generation is complete, then add new fitness value to the end of the line        
         else:
             with open(fr"./{self.folder}/{self.filename}.csv", 'r+') as f: #r+ does the work of rw
                 lines = f.readlines()

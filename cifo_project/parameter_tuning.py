@@ -13,26 +13,27 @@ crossover_methods = {'single_point':single_point_crossover, 'multi_point':multi_
 for mut_p in [0.3,0.6,0.9]:
     for cross_p in [0.3,0.6,0.9]:
         if __name__ == '__main__':
-            problem = load_sudoku("problem.txt")
+            problem = load_sudoku("problem_very_easy.txt")
             arr = np.array(problem)
 
             # running each combination of methods several times in order to calculate an average
-            for _ in range(10):         
+            for _ in range(10): 
                 pop = Population(
-                    size=120,
+                    size=50,
                     full_array = arr,
-                    replacement=False,
+                    replacement=True,
                     filename = 'mutation-'+ str(mut_p) + '_'+ 'crossover-'+ str(cross_p),  
                     folder=r"PT_", #parameter tunning
                     optim="max"
                 )
 
-                pop.evolve(gens = 50,
-                        select = rank,
+                pop.evolve(gens=700,
+                        select = tournament,
                         crossover = multi_point_crossover,
                         mutate = swap_mutation,
                         co_p = cross_p,
                         mu_p= mut_p,
                         elitism=True,
+                        conv_param=[200,100,50],
                         full_array_evolve=arr,
                         log = True)

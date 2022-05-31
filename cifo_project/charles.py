@@ -209,7 +209,7 @@ class Population:
             if conv_param:                 
                 if gens > conv_param[0]: 
                     if len(the_best) > conv_param[1]: 
-                        # if there are the 10 numbers equal to the last restart (since elitism is on we can consider that the last number is the best)
+                        # if there are the n numbers equal to the last, restart (since elitism is on we can consider that the last number is the best)
                         if the_best.count(the_best[-1]) > conv_param[2]: 
                             flag = 1
                             the_best = []                
